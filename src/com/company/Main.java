@@ -1,27 +1,67 @@
 package com.company;
-import java.io.*;
 import com.sun.media.sound.FFT;
-import com.sun.media.sound.WaveFileReader;
+import java.io.*;
 
-import java.io.File;
-import java.net.URL;
+import com.company.*;
+
 public class Main {
 
     public static void main(String[] args) {
+        final long startTime = System.currentTimeMillis();
+
         /*double[] samples = new double[16384];
         for (int i = 0; i < 16384; i++){
             samples[i] = Math.sin((double)i);
         }
         */
+        try {
+            File file = new File("/Users/alexanderschaevitz/IdeaProjects/Potaudio Java/src/com/company/It's Goin Down x Emoji dr edit.wav");
+            WavFile wavFile = WavFile.openWavFile(file);
+            wavFile.display();
+            int numChannels = wavFile.getNumChannels();
+            long numFrames = wavFile.getNumFrames();
+            // Create a buffer of 100 frames
+            double[] buffer = new double[16384 * numChannels];
 
-        WavFile wavFile = WavFile.newWavFile("/Volumes/TOO $HORT/1706/It's Goin Down x Emoji dr edit.wav");
+            int framesRead;
+            double min = Double.MAX_VALUE;
+            double max = Double.MIN_VALUE;
 
+            do
+            {
+                // Read frames into buffer
+                framesRead = wavFile.readFrames(buffer, 1);
+
+                // Loop through frames and look for minimum and maximum value
+                for (int s=0 ; s<framesRead * numChannels ; s++)
+                {
+                    if (buffer[s] > max) max = buffer[s];
+                    if (buffer[s] < min) min = buffer[s];
+                }
+                getMagnitudes(buffer);
+
+            }
+            while (framesRead != 0);
+
+            wavFile.close();
+
+            // Output the minimum and maximum value
+            System.out.printf("Min: %f, Max: %f\n", min, max);
+
+        }
+        catch (Exception e)
+        {
+            System.err.println(e);
+        }
 
         //String urlAsString = "file:/Volumes/TOO $HORT/1706/It's Goin Down x Emoji dr edit.wav";
         //URL url = new URL(urlAsString);
         //WaveFileReader waveFileReader = new WaveFileReader();
 
        // double[] result = getMagnitudes(samples);
+        final long endTime = System.currentTimeMillis();
+        System.out.println("Total execution time: " + (endTime - startTime) );
+
 
 
     }
@@ -49,7 +89,7 @@ public class Main {
         double[] mag = new double[positiveSize];
         for (int i = 0; i < indexSize; i += 2) {
             mag[i / 2] = Math.sqrt(complexNumbers[i] * complexNumbers[i] + complexNumbers[i + 1] * complexNumbers[i + 1]);
-            System.out.println(mag[i / 2]);
+            //System.out.println(mag[i / 2]);
         }
 
         return mag;
