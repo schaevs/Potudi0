@@ -21,16 +21,21 @@ public class Main {
             int numChannels = wavFile.getNumChannels();
             long numFrames = wavFile.getNumFrames();
             // Create a buffer of 100 frames
-            double[] buffer = new double[16384 * numChannels];
+            int windowSize = 4096;
+            int numWindows = (int)Math.ceil(numFrames/(double)windowSize) + 1;
+            double[] buffer = new double[windowSize * numChannels];
+            double[][] allPts = new double [numWindows][windowSize*numChannels];
+            double[] avg = new double[windowSize * numChannels];
 
             int framesRead;
             double min = Double.MAX_VALUE;
             double max = Double.MIN_VALUE;
 
+            int i = 0;
             do
             {
                 // Read frames into buffer
-                framesRead = wavFile.readFrames(buffer, 1);
+                framesRead = wavFile.readFrames(buffer, windowSize);
 
                 // Loop through frames and look for minimum and maximum value
                 for (int s=0 ; s<framesRead * numChannels ; s++)
@@ -38,10 +43,28 @@ public class Main {
                     if (buffer[s] > max) max = buffer[s];
                     if (buffer[s] < min) min = buffer[s];
                 }
-                getMagnitudes(buffer);
+
+                allPts[i] = getMagnitudes(buffer);
+                System.out.println(i + " " + numWindows);
+
+                i++;
 
             }
             while (framesRead != 0);
+
+            System.out.println("finished ffting");
+            long sum;
+            for(i = 0; i< allPts[0].length; i++){
+                sum = 0;
+                for(int j = 0; j < numWindows; j++){
+                    sum += allPts[j][i];
+                }
+                avg[i] = sum / numWindows;
+                System.out.println(avg[i]);
+            }
+            LineChart_AWT lineChart_awt = new LineChart_AWT("","",avg );
+            lineChart_awt.main(new String[0], avg);
+
 
             wavFile.close();
 
