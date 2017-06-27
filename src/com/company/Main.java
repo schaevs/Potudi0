@@ -14,69 +14,77 @@ public class Main {
             samples[i] = Math.sin((double)i);
         }
         */
-        try {
-            File file = new File("/Users/alexanderschaevitz/IdeaProjects/Potaudio Java/src/com/company/It's Goin Down x Emoji dr edit.wav");
-            WavFile wavFile = WavFile.openWavFile(file);
-            wavFile.display();
-            int numChannels = wavFile.getNumChannels();
-            long numFrames = wavFile.getNumFrames();
-            // Create a buffer of 100 frames
-            int windowSize = 4096;
-            int numWindows = (int)Math.ceil(numFrames/(double)windowSize) + 1;
-            double[] buffer = new double[windowSize * numChannels];
-            double[][] allPts = new double [numWindows][windowSize*numChannels];
-            double[] avg = new double[windowSize * numChannels];
+        File[] files = getWavs("/Volumes/TOO $HORT/1706");
+        System.out.println(files.length);
+        String[] fileNames = new String[files.length];
+        int[] ratings = new int[files.length];
+        int k = 0;
+        for(File fileit : files) {
+            System.out.println(fileit.getName());
+            fileNames[k] = fileit.getName();
+            try {
+                //File file = new File("/Users/alexanderschaevitz/IdeaProjects/Potaudio Java/src/com/company/It's Goin Down x Emoji dr edit.wav");
+                File file = fileit;
+                WavFile wavFile = WavFile.openWavFile(file);
+                wavFile.display();
+                int numChannels = wavFile.getNumChannels();
+                long numFrames = wavFile.getNumFrames();
+                // Create a buffer of 100 frames
+                int windowSize = 4096;
+                int numWindows = (int) Math.ceil(numFrames / (double) windowSize) + 1;
+                double[] buffer = new double[windowSize * numChannels];
+                double[][] allPts = new double[numWindows][windowSize * numChannels];
+                double[] avg = new double[windowSize * numChannels];
+                int framesRead;
+                double min = Double.MAX_VALUE;
+                double max = Double.MIN_VALUE;
 
-            int framesRead;
-            double min = Double.MAX_VALUE;
-            double max = Double.MIN_VALUE;
+                int i = 0;
+                do {
+                    // Read frames into buffer
+                    framesRead = wavFile.readFrames(buffer, windowSize);
 
-            int i = 0;
-            do
-            {
-                // Read frames into buffer
-                framesRead = wavFile.readFrames(buffer, windowSize);
+                    // Loop through frames and look for minimum and maximum value
+                    for (int s = 0; s < framesRead * numChannels; s++) {
+                        if (buffer[s] > max) max = buffer[s];
+                        if (buffer[s] < min) min = buffer[s];
+                    }
 
-                // Loop through frames and look for minimum and maximum value
-                for (int s=0 ; s<framesRead * numChannels ; s++)
-                {
-                    if (buffer[s] > max) max = buffer[s];
-                    if (buffer[s] < min) min = buffer[s];
+                    allPts[i] = getMagnitudes(buffer);
+                    //System.out.println(i + " " + numWindows);
+
+                    i++;
+
                 }
+                while (framesRead != 0);
 
-                allPts[i] = getMagnitudes(buffer);
-                System.out.println(i + " " + numWindows);
-
-                i++;
-
-            }
-            while (framesRead != 0);
-
-            System.out.println("finished ffting");
-            long sum;
-            for(i = 0; i< allPts[0].length; i++){
-                sum = 0;
-                for(int j = 0; j < numWindows; j++){
-                    sum += allPts[j][i];
+                long sum;
+                for (i = 0; i < allPts[0].length; i++) {
+                    sum = 0;
+                    for (int j = 0; j < numWindows; j++) {
+                        sum += allPts[j][i];
+                    }
+                    avg[i] = sum / (numWindows/1000.0);
+                    //System.out.println(avg[i]);
                 }
-                avg[i] = sum / numWindows;
-                System.out.println(avg[i]);
+                System.out.println("Number of bins: " + avg.length);
+                System.out.println("Content above 16khz: " + getHQcontentRating(avg));
+                ratings[k] = getHQcontentRating(avg);
+                k++;
+                //LineChart_AWT lineChart_awt = new LineChart_AWT("", "", avg);
+                //lineChart_awt.main(new String[0], avg);
+
+
+                wavFile.close();
+
+                // Output the minimum and maximum value
+                System.out.printf("Min: %f, Max: %f\n\n\n\n", min, max);
+
+            } catch (Exception e) {
+                System.err.println(e);
             }
-            LineChart_AWT lineChart_awt = new LineChart_AWT("","",avg );
-            lineChart_awt.main(new String[0], avg);
-
-
-            wavFile.close();
-
-            // Output the minimum and maximum value
-            System.out.printf("Min: %f, Max: %f\n", min, max);
-
         }
-        catch (Exception e)
-        {
-            System.err.println(e);
-        }
-
+        WeightSort.main(fileNames,ratings);
         //String urlAsString = "file:/Volumes/TOO $HORT/1706/It's Goin Down x Emoji dr edit.wav";
         //URL url = new URL(urlAsString);
         //WaveFileReader waveFileReader = new WaveFileReader();
@@ -116,6 +124,24 @@ public class Main {
         }
 
         return mag;
+    }
+
+    static public File[] getWavs(String directory){
+        File dir = new File(directory);
+        return dir.listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String filename)
+            { return (filename.endsWith(".wav") && !filename.startsWith("._"));}
+        });
+    }
+
+    static public int getHQcontentRating(double[] bins){
+        int sum = 0;
+        for (int i = (int)(bins.length*(4000.0/22050.0)); i<bins.length; i++){
+            sum += bins[i];
+            //System.out.println(bins[i]);
+        }
+        //System.out.println(sum);
+        return sum;
     }
 
 
