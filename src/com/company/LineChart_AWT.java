@@ -30,7 +30,7 @@ public class LineChart_AWT extends ApplicationFrame {
     private DefaultCategoryDataset createDataset( double[] data ) {
         DefaultCategoryDataset dataset = new DefaultCategoryDataset( );
         for (int i = 0; i <data.length; i++ ){
-            dataset.addValue(data[i],"avg dB", new Integer(i).toString());
+            dataset.addValue(data[i]*i,"avg dB", new Integer(i).toString());
         }
 
         /*dataset.addValue( 15 , "schools" , "1970" );
