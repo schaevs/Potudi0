@@ -1,8 +1,10 @@
 package com.company;
 import com.sun.media.sound.FFT;
 import java.io.*;
+import org.apache.commons.lang3.ArrayUtils;
 
 import com.company.*;
+import org.apache.commons.lang3.ArrayUtils;
 
 public class Main {
 
@@ -14,14 +16,18 @@ public class Main {
             samples[i] = Math.sin((double)i);
         }
         */
-        File[] files = getWavs("/Volumes/TOO $HORT/1706");
+        File[] files = getWavs("/Volumes/TOO $HORT", "R");
         System.out.println(files.length);
         String[] fileNames = new String[files.length];
         int[] ratings = new int[files.length];
         int k = 0;
+        int l = 0;
         for(File fileit : files) {
+
             System.out.println(fileit.getName());
             fileNames[k] = fileit.getName();
+            System.out.println(l+"/"+files.length);
+            l++;
             try {
                 //File file = new File("/Users/alexanderschaevitz/IdeaProjects/Potaudio Java/src/com/company/It's Goin Down x Emoji dr edit.wav");
                 File file = fileit;
@@ -29,6 +35,9 @@ public class Main {
                 wavFile.display();
                 int numChannels = wavFile.getNumChannels();
                 long numFrames = wavFile.getNumFrames();
+                if(numFrames > 25443200 || numFrames < 5087877){
+                    continue;
+                }
                 // Create a buffer of 100 frames
                 int windowSize = 4096;
                 int numWindows = (int) Math.ceil(numFrames / (double) windowSize) + 1;
@@ -64,11 +73,11 @@ public class Main {
                     for (int j = 0; j < numWindows; j++) {
                         sum += allPts[j][i];
                     }
-                    avg[i] = sum / (numWindows/1000.0);
+                    avg[i] = sum / (numWindows/100000.0);
                     //System.out.println(avg[i]);
                 }
                 System.out.println("Number of bins: " + avg.length);
-                System.out.println("Content above 16khz: " + getHQcontentRating(avg));
+                System.out.println("Content above 16khz: " + getHQcontentRating(avg)/10000);
                 ratings[k] = getHQcontentRating(avg);
                 k++;
                 //LineChart_AWT lineChart_awt = new LineChart_AWT("", "", avg);
@@ -126,18 +135,44 @@ public class Main {
         return mag;
     }
 
-    static public File[] getWavs(String directory){
-        File dir = new File(directory);
-        return dir.listFiles(new FilenameFilter() {
-            public boolean accept(File dir, String filename)
-            { return (filename.endsWith(".wav") && !filename.startsWith("._"));}
+    static public String[] getDirs(String directory){
+        File file = new File(directory);
+        return file.list(new FilenameFilter() {
+            @Override
+            public boolean accept(File current, String name) {
+                return new File(current, name).isDirectory();
+            }
         });
     }
 
+    static public File[] getWavs(String directory, String searchType) {
+        File dir = new File(directory);
+        String[] subDirs = getDirs(directory);
+        File[] result = new File[0];
+        result = ArrayUtils.addAll(result, dir.listFiles(new FilenameFilter() {
+            public boolean accept(File dir, String filename)
+            { return (filename.endsWith(".wav") && !filename.startsWith("._"));}
+        }));
+
+
+        if (searchType == "R"){
+            for (String subdir : subDirs) {
+                System.out.println(directory+"/"+subdir);
+
+                result = ArrayUtils.addAll(result, getWavs(directory+"/"+subdir, "R"));
+            }
+        }
+
+
+        return result;
+    }
+
+
+
     static public int getHQcontentRating(double[] bins){
         int sum = 0;
-        for (int i = (int)(bins.length*(4000.0/22050.0)); i<bins.length; i++){
-            sum += bins[i];
+        for (int i = (int)(bins.length*(5510.0/22050.0)); i<bins.length; i++){
+            sum += bins[i]*i;
             //System.out.println(bins[i]);
         }
         //System.out.println(sum);

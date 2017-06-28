@@ -1,7 +1,7 @@
 package com.company;
 
 /**
- * Created by alexanderschaevitz on 6/27/17.
+   https://stackoverflow.com/questions/28556129/java-sort-one-array-based-on-values-of-another-array
  */
 import java.util.*;
 
